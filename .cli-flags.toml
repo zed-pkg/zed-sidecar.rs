@@ -1,0 +1,18 @@
+# flags-2-env surface for `zed-sidecar`
+[identity]
+service = "zed-sidecar"
+type_name = "SidecarEnv"
+
+[help]
+url = "https://github.com/zed-pkg/zed-sidecar.rs"
+columns = ["options", "env", "type", "default", "description"]
+
+[parse]
+allow_unknown = false
+
+[flags.bind]
+env = "ZED_SIDECAR_BIND"
+long = "bind"
+type = "string"
+default = "127.0.0.1:9090"
+help = "HTTP listen address for /healthz /readyz /metrics."
