@@ -1,0 +1,19 @@
+[package]
+name = "zed-sidecar"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "k8s sidecar for zed-pkg."
+repository = "https://github.com/zed-pkg/zed-sidecar.rs"
+readme = "README.md"
+
+[[bin]]
+name = "zed-sidecar"
+path = "src/main.rs"
+
+[dependencies]
+ores-otel-sidecar = { git = "https://github.com/ores-otel/ores-otel-sidecar.rs", rev = "dc67460d3fb033a82222d3639aeb03963c434e7a" }
+
+
+[lints.rust]
+unsafe_code = "forbid"

@@ -1,0 +1,28 @@
+[package]
+org = "zed-pkg"
+name = "zed-sidecar"
+version = "0.1.0"
+description = "k8s sidecar for zed-pkg."
+license = "MIT"
+keywords = ["sidecar", "observability", "k8s"]
+language = "rust"
+
+[package.repository]
+vcs = "git"
+url = "https://github.com/zed-pkg/zed-sidecar.rs"
+
+[dependencies]
+"ores-otel/ores-otel-sidecar" = "^0.1.0"
+
+[build]
+command = "cargo build --release --locked --bin zed-sidecar"
+outputs = ["target/release/zed-sidecar"]
+
+[bin]
+zed-sidecar = "target/release/zed-sidecar"
+
+[install]
+adapter = "none"
+
+[scripts]
+test = "cargo test --all-targets --locked"
