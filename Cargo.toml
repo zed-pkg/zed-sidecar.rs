@@ -13,7 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 ores-otel-sidecar = { git = "https://github.com/ores-otel/ores-otel-sidecar.rs", rev = "fed785ad9a638e24d458e0f2acd390624e4e748d" }
-
+ores-sidecar = { git = "https://github.com/ORESoftware/ores-sidecar.rs", rev = "84b1a70a29477cc7c9f579dd94dbdb087a4ef5ee" }
 
 [lints.rust]
 unsafe_code = "forbid"
