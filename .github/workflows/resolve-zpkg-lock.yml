@@ -55,7 +55,7 @@ jobs:
             > "$RUNNER_TEMP/zpkg-validate.json"
           sha256sum .zpkg.lock
       - name: Upload resolved lock and validation evidence
-        uses: actions/upload-artifact@043fb46d1a93cbc5d6e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: zed-sidecar-zpkg-lock
           path: |
