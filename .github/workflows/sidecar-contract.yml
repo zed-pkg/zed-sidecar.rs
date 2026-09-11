@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ores-otel/ores-otel-sidecar.rs
-          ref: 38c30455f492b028a990b562287a067db591126f
+          ref: 3dc1c5bb2464e3f7f1776efc31d5b2ede60f1a84
           path: .contract-owner
           persist-credentials: false
 
