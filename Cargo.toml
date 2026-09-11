@@ -12,8 +12,7 @@ name = "zed-sidecar"
 path = "src/main.rs"
 
 [dependencies]
-ores-otel-sidecar = { git = "https://github.com/ores-otel/ores-otel-sidecar.rs", rev = "fed785ad9a638e24d458e0f2acd390624e4e748d" }
-
+ores-otel-sidecar = { git = "https://github.com/ores-otel/ores-otel-sidecar.rs", rev = "38c30455f492b028a990b562287a067db591126f" }
 
 [lints.rust]
 unsafe_code = "forbid"
