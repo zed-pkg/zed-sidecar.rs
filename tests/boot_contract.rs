@@ -65,6 +65,14 @@ fn assert_success(output: &Output) {
 }
 
 #[test]
+fn contract_keeps_cross_version_dotenv_isolation() {
+    let source = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(".cli-flags.toml"))
+        .expect("read flags contract");
+    assert!(source.lines().any(|line| line.trim() == "dotenv = false"));
+    assert!(source.lines().any(|line| line.trim() == "files = []"));
+}
+
+#[test]
 fn preflight_accepts_the_repository_default_contracts() {
     let fixture = Fixture::new();
     let output = command(fixture.path())
