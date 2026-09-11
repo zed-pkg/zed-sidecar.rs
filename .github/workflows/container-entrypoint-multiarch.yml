@@ -19,6 +19,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify exact contributor head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - name: Verify POSIX wrapper and exit propagation
         shell: bash
         run: |
@@ -36,21 +43,71 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify exact contributor head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - run: docker build --progress=plain --tag zed-sidecar:runtime-ci .
       - run: docker build --progress=plain --target shell-runtime --tag zed-sidecar:shell-ci .
-      - name: Verify image execution metadata
+      - name: Verify image execution metadata and immutable authorities
         shell: bash
         run: |
           set -euo pipefail
           test "$(docker image inspect zed-sidecar:runtime-ci --format '{{json .Config.Entrypoint}}')" = '["/zed-sidecar"]'
+          test "$(docker image inspect zed-sidecar:runtime-ci --format '{{json .Config.WorkingDir}}')" = '"/"'
           test "$(docker image inspect zed-sidecar:shell-ci --format '{{json .Config.Entrypoint}}')" = '["/usr/local/bin/entrypoint.sh"]'
           test "$(docker image inspect zed-sidecar:shell-ci --format '{{json .Config.Cmd}}')" = '["/zed-sidecar"]'
+          test "$(docker image inspect zed-sidecar:shell-ci --format '{{json .Config.WorkingDir}}')" = '"/"'
+          docker run --rm --entrypoint /busybox/sh gcr.io/distroless/cc-debian12:debug-nonroot -c true >/dev/null 2>&1 || true
+          docker run --rm zed-sidecar:runtime-ci preflight
+          docker run --rm zed-sidecar:shell-ci /zed-sidecar preflight
+      - name: Verify fail-closed product boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          docker run --rm zed-sidecar:runtime-ci preflight --definitely-not-a-sidecar-option >/tmp/unknown.out 2>/tmp/unknown.err
+          unknown_status=$?
+          docker run --rm -e ZED_SIDECAR_BIND=0.0.0.0:19090 zed-sidecar:runtime-ci preflight >/tmp/nonloopback.out 2>/tmp/nonloopback.err
+          nonloopback_status=$?
+          set -e
+          test "$unknown_status" -eq 2
+          test "$nonloopback_status" -eq 1
+          ! grep -F '0.0.0.0:19090' /tmp/nonloopback.out /tmp/nonloopback.err
+      - name: Boot distroless server and exercise in-container health probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          name=zed-sidecar-runtime-smoke
+          cleanup() { docker rm -f "$name" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          docker run --rm -d --name "$name" zed-sidecar:runtime-ci >/dev/null
+          for attempt in $(seq 1 30); do
+            if docker exec "$name" /zed-sidecar probe >/tmp/probe.out 2>/tmp/probe.err; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs "$name" >&2 || true
+          cat /tmp/probe.out >&2 || true
+          cat /tmp/probe.err >&2 || true
+          exit 1
 
   buildx-multiarch:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify exact contributor head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4.3.0
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
       - name: Build hardened default for amd64 and arm64
