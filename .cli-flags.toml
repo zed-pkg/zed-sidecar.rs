@@ -9,7 +9,10 @@ columns = ["options", "env", "type", "default", "description"]
 
 # Never read caller-owned dotenv files implicitly. Deployment configuration is
 # supplied through the orchestrator/process environment or explicit argv.
+# Keep both spellings because the pinned runtime parser and newer forward
+# parser generations do not all implement the same dotenv-isolation key.
 [env]
+dotenv = false
 files = []
 
 [parse]
