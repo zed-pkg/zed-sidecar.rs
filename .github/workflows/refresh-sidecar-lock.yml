@@ -1,0 +1,46 @@
+name: Refresh sidecar lock candidate
+
+on:
+  pull_request:
+    paths:
+      - Cargo.toml
+      - Cargo.lock
+      - .github/workflows/refresh-sidecar-lock.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lock-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact contributor head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify exact head
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30
+        with:
+          toolchain: 1.95.0
+      - name: Regenerate lock from reviewed manifests
+        run: |
+          set -euo pipefail
+          cargo generate-lockfile
+          cargo metadata --locked --format-version 1 >/dev/null
+          grep -F '38c30455f492b028a990b562287a067db591126f' Cargo.lock >/dev/null
+          sha256sum Cargo.lock
+      - name: Upload exact lock candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: zed-sidecar-cargo-lock
+          path: Cargo.lock
+          if-no-files-found: error
+          retention-days: 7
