@@ -1,8 +1,8 @@
 # flags-2-env surface for `zed-sidecar`
 #
-# Product policy is stricter than the shared parent: non-loopback binding is
-# represented in the typed boot snapshot so raw environment input cannot evade
-# validation, but the binary rejects `true` before runtime initialization.
+# zed-sidecar is permanently loopback-only. The shared parent validates the
+# product bind key before runtime initialization, so there is intentionally no
+# public allow-non-loopback escape hatch in this product contract.
 [help]
 url = "https://github.com/zed-pkg/zed-sidecar.rs"
 columns = ["options", "env", "type", "default", "description"]
@@ -21,16 +21,7 @@ env = "ZED_SIDECAR_BIND"
 aliases = ["bind"]
 type = "string"
 default = "127.0.0.1:9090"
-help = "HTTP listen address for /healthz /readyz /metrics."
-
-[flags.allow-non-loopback]
-env = "ZED_SIDECAR_ALLOW_NON_LOOPBACK"
-aliases = ["allow-non-loopback"]
-type = "bool"
-default = false
-true_aliases = ["t", "1", "yes"]
-false_aliases = ["f", "0", "no"]
-help = "Compatibility input validated at boot; zed-sidecar policy requires false."
+help = "HTTP listen address for /healthz /readyz /metrics. Loopback addresses only."
 
 [commands.preflight]
 env = "ZED_SIDECAR_COMMAND_PREFLIGHT"
