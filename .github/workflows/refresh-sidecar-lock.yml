@@ -36,6 +36,9 @@ jobs:
           cargo metadata --locked --format-version 1 >/dev/null
           grep -F '3dc1c5bb2464e3f7f1776efc31d5b2ede60f1a84' Cargo.lock >/dev/null
           sha256sum Cargo.lock
+          echo '---BEGIN CARGO.LOCK CANDIDATE---'
+          cat Cargo.lock
+          echo '---END CARGO.LOCK CANDIDATE---'
       - name: Upload exact lock candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
