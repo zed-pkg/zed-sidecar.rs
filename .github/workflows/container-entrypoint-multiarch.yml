@@ -61,7 +61,6 @@ jobs:
           test "$(docker image inspect zed-sidecar:shell-ci --format '{{json .Config.Entrypoint}}')" = '["/usr/local/bin/entrypoint.sh"]'
           test "$(docker image inspect zed-sidecar:shell-ci --format '{{json .Config.Cmd}}')" = '["/zed-sidecar"]'
           test "$(docker image inspect zed-sidecar:shell-ci --format '{{json .Config.WorkingDir}}')" = '"/"'
-          docker run --rm --entrypoint /busybox/sh gcr.io/distroless/cc-debian12:debug-nonroot -c true >/dev/null 2>&1 || true
           docker run --rm zed-sidecar:runtime-ci preflight
           docker run --rm zed-sidecar:shell-ci /zed-sidecar preflight
       - name: Verify fail-closed product boundaries
