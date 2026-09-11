@@ -1,0 +1,14 @@
+schema = "ores.sidecar/config/v1"
+
+[[sidecars]]
+id = "zed-sidecar"
+path = "."
+startup_config = ".cli-flags.toml"
+runtime_mutable = []
+
+[sidecars.runtime_updates]
+provider = "disabled"
+mode = "disabled"
+poll_seconds = 180
+namespace = "zed-sidecar"
+cache = "runtime-env"
