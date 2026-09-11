@@ -19,8 +19,12 @@ fn repository_contract_is_loopback_only_and_dotenv_closed() {
     assert!(flags.contains("env = \"ZED_SIDECAR_BIND\""));
     assert!(flags.contains("files = []"));
     assert!(flags.contains("allow_unknown = false"));
-    assert!(!flags.contains("allow-non-loopback"));
-    assert!(!flags.contains("ZED_SIDECAR_ALLOW_NON_LOOPBACK"));
+
+    // Check actual flags-2-env declarations rather than prose comments. The
+    // contract intentionally documents why no non-loopback escape exists, so a
+    // bare substring assertion would reject that safety documentation itself.
+    assert!(!flags.contains("[flags.allow-non-loopback]"));
+    assert!(!flags.contains("env = \"ZED_SIDECAR_ALLOW_NON_LOOPBACK\""));
     assert!(!flags.contains("[identity]"));
 
     let sidecar = include_str!("../.ores-sidecar.toml");
