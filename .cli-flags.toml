@@ -1,18 +1,46 @@
 # flags-2-env surface for `zed-sidecar`
-[identity]
-service = "zed-sidecar"
-type_name = "SidecarEnv"
-
+#
+# Product policy is stricter than the shared parent: non-loopback binding is
+# represented in the typed boot snapshot so raw environment input cannot evade
+# validation, but the binary rejects `true` before runtime initialization.
 [help]
 url = "https://github.com/zed-pkg/zed-sidecar.rs"
 columns = ["options", "env", "type", "default", "description"]
 
+# Never read caller-owned dotenv files implicitly. Deployment configuration is
+# supplied through the orchestrator/process environment or explicit argv.
+[env]
+files = []
+
 [parse]
 allow_unknown = false
+command_env = "ZED_SIDECAR_COMMAND"
 
 [flags.bind]
 env = "ZED_SIDECAR_BIND"
-long = "bind"
+aliases = ["bind"]
 type = "string"
 default = "127.0.0.1:9090"
 help = "HTTP listen address for /healthz /readyz /metrics."
+
+[flags.allow-non-loopback]
+env = "ZED_SIDECAR_ALLOW_NON_LOOPBACK"
+aliases = ["allow-non-loopback"]
+type = "bool"
+default = false
+true_aliases = ["t", "1", "yes"]
+false_aliases = ["f", "0", "no"]
+help = "Compatibility input validated at boot; zed-sidecar policy requires false."
+
+[commands.preflight]
+env = "ZED_SIDECAR_COMMAND_PREFLIGHT"
+help = "Validate startup configuration and environment without starting listeners."
+
+[commands.probe]
+aliases = ["probe-healthz"]
+env = "ZED_SIDECAR_COMMAND_PROBE"
+help = "Run one bounded loopback GET against /healthz and exit."
+
+[commands.probe-readyz]
+env = "ZED_SIDECAR_COMMAND_PROBE_READYZ"
+help = "Run one bounded loopback GET against /readyz and exit."
