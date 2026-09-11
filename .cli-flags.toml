@@ -1,18 +1,40 @@
 # flags-2-env surface for `zed-sidecar`
-[identity]
-service = "zed-sidecar"
-type_name = "SidecarEnv"
-
+#
+# zed-sidecar is permanently loopback-only. The shared parent validates the
+# product bind key before runtime initialization, so there is intentionally no
+# public allow-non-loopback escape hatch in this product contract.
 [help]
 url = "https://github.com/zed-pkg/zed-sidecar.rs"
 columns = ["options", "env", "type", "default", "description"]
 
+# Never read caller-owned dotenv files implicitly. Deployment configuration is
+# supplied through the orchestrator/process environment or explicit argv.
+# Keep both spellings because the pinned runtime parser and newer forward
+# parser generations do not all implement the same dotenv-isolation key.
+[env]
+dotenv = false
+files = []
+
 [parse]
 allow_unknown = false
+command_env = "ZED_SIDECAR_COMMAND"
 
 [flags.bind]
 env = "ZED_SIDECAR_BIND"
-long = "bind"
+aliases = ["bind"]
 type = "string"
 default = "127.0.0.1:9090"
-help = "HTTP listen address for /healthz /readyz /metrics."
+help = "HTTP listen address for /healthz /readyz /metrics. Loopback addresses only."
+
+[commands.preflight]
+env = "ZED_SIDECAR_COMMAND_PREFLIGHT"
+help = "Validate startup configuration and environment without starting listeners."
+
+[commands.probe]
+aliases = ["probe-healthz"]
+env = "ZED_SIDECAR_COMMAND_PROBE"
+help = "Run one bounded loopback GET against /healthz and exit."
+
+[commands.probe-readyz]
+env = "ZED_SIDECAR_COMMAND_PROBE_READYZ"
+help = "Run one bounded loopback GET against /readyz and exit."

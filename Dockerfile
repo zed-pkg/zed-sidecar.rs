@@ -42,21 +42,25 @@ RUN apt-get update \
     && find /var/lib/apt/lists -mindepth 1 -delete \
     && groupadd --system --gid 65532 nonroot \
     && useradd --system --uid 65532 --gid 65532 --no-create-home --shell /usr/sbin/nologin nonroot
+WORKDIR /
 COPY --from=build --chown=65532:65532 "/usr/local/bin/zed-sidecar" "/zed-sidecar"
+COPY --from=build --chown=65532:65532 --chmod=0444 "/src/.cli-flags.toml" "/.cli-flags.toml"
+COPY --from=build --chown=65532:65532 --chmod=0444 "/src/.ores-sidecar.toml" "/.ores-sidecar.toml"
 COPY --chmod=0555 docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 ENV ZED_SIDECAR_BIND=127.0.0.1:9090 \
-    ORES_OTEL_SIDECAR_BIND=127.0.0.1:9090 \
     OTEL_SERVICE_NAME=zed-sidecar
 USER 65532:65532
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/zed-sidecar"]
 
 FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
-# Binary lives at /<bin> so kubelet exec ["/zed-sidecar", "probe"] matches the
-# ores-otel sidecar contract (no curl, no /usr/local/bin prefix required).
+WORKDIR /
+# The flags2env schema and sidecar policy are immutable image inputs. The
+# executable fails closed when either authority is absent or malformed.
 COPY --from=build --chown=65532:65532 "/usr/local/bin/zed-sidecar" "/zed-sidecar"
+COPY --from=build --chown=65532:65532 --chmod=0444 "/src/.cli-flags.toml" "/.cli-flags.toml"
+COPY --from=build --chown=65532:65532 --chmod=0444 "/src/.ores-sidecar.toml" "/.ores-sidecar.toml"
 ENV ZED_SIDECAR_BIND=127.0.0.1:9090 \
-    ORES_OTEL_SIDECAR_BIND=127.0.0.1:9090 \
     OTEL_SERVICE_NAME=zed-sidecar
 USER 65532:65532
 ENTRYPOINT ["/zed-sidecar"]

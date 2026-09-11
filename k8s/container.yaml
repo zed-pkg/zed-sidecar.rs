@@ -6,10 +6,9 @@
 - name: otel-sidecar
   image: zed-sidecar:latest
   imagePullPolicy: IfNotPresent
+  workingDir: /
   env:
     - name: ZED_SIDECAR_BIND
-      value: "127.0.0.1:9090"
-    - name: ORES_OTEL_SIDECAR_BIND
       value: "127.0.0.1:9090"
   securityContext:
     allowPrivilegeEscalation: false
