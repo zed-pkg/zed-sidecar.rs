@@ -13,10 +13,8 @@ impl Fixture {
             .duration_since(UNIX_EPOCH)
             .expect("system time after epoch")
             .as_nanos();
-        let root = std::env::temp_dir().join(format!(
-            "zed-sidecar-boot-{}-{nonce}",
-            std::process::id()
-        ));
+        let root =
+            std::env::temp_dir().join(format!("zed-sidecar-boot-{}-{nonce}", std::process::id()));
         fs::create_dir_all(&root).expect("create boot fixture");
         let source = Path::new(env!("CARGO_MANIFEST_DIR"));
         for file in [".cli-flags.toml", ".ores-sidecar.toml"] {
@@ -133,8 +131,7 @@ fn unknown_argv_fails_at_the_cli_boundary() {
 #[test]
 fn missing_runtime_policy_fails_even_for_preflight() {
     let fixture = Fixture::new();
-    fs::remove_file(fixture.path().join(".ores-sidecar.toml"))
-        .expect("remove sidecar policy");
+    fs::remove_file(fixture.path().join(".ores-sidecar.toml")).expect("remove sidecar policy");
     let output = command(fixture.path())
         .arg("preflight")
         .output()
@@ -145,8 +142,7 @@ fn missing_runtime_policy_fails_even_for_preflight() {
 #[test]
 fn missing_flags_contract_fails_at_the_cli_boundary() {
     let fixture = Fixture::new();
-    fs::remove_file(fixture.path().join(".cli-flags.toml"))
-        .expect("remove flags contract");
+    fs::remove_file(fixture.path().join(".cli-flags.toml")).expect("remove flags contract");
     let output = command(fixture.path())
         .arg("preflight")
         .output()
