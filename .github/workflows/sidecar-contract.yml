@@ -1,0 +1,88 @@
+name: sidecar contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sidecar-contract-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tjsv:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact consumer head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify checked-out consumer revision
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+
+      - name: Check out canonical sidecar contract authorities
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ores-otel/ores-otel-sidecar.rs
+          ref: 38c30455f492b028a990b562287a067db591126f
+          path: .contract-owner
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.16.0
+
+      - name: Install caller-side TypeSpec resolver packages
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts \
+            @typespec/compiler@1.15.0 @typespec/json-schema@1.15.0
+
+      - name: Render repository TOML as a validation witness
+        run: |
+          set -euo pipefail
+          test -f .cli-flags.toml
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import tomllib
+
+          with open('.ores-sidecar.toml', 'rb') as handle:
+              document = tomllib.load(handle)
+
+          destination = pathlib.Path('.tjsv-instances/OresSidecarFile/valid/zed-sidecar.json')
+          destination.parent.mkdir(parents=True, exist_ok=True)
+          destination.write_text(
+              json.dumps(document, sort_keys=True, separators=(',', ':')) + '\n',
+              encoding='utf-8',
+          )
+          PY
+
+      - name: Enforce canonical TypeSpec and JSON Schema authorities with TJSV
+        uses: ORESoftware/typespec-json-schema-validator@7241f8e52dcc4518c72f0fdb5152d6cf66c86656
+        with:
+          typespec: .contract-owner/contracts/sidecar/main.tsp
+          schema: .contract-owner/contracts/sidecar/authored.schema.json
+          instances: .tjsv-instances
+          report: ${{ runner.temp }}/zed-sidecar-tjsv-report.json
+          sarif: ''
+          quiet: 'false'
+
+      - name: Retain TJSV admission evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: zed-sidecar-tjsv
+          path: ${{ runner.temp }}/zed-sidecar-tjsv-report.json
+          if-no-files-found: warn
+          retention-days: 14
