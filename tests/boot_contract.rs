@@ -68,8 +68,18 @@ fn assert_success(output: &Output) {
 fn contract_keeps_cross_version_dotenv_isolation() {
     let source = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(".cli-flags.toml"))
         .expect("read flags contract");
+    assert!(source.lines().any(|line| line.trim() == "load = false"));
     assert!(source.lines().any(|line| line.trim() == "dotenv = false"));
     assert!(source.lines().any(|line| line.trim() == "files = []"));
+}
+
+#[test]
+fn contract_has_no_public_non_loopback_escape_hatch() {
+    let source = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(".cli-flags.toml"))
+        .expect("read flags contract");
+    let normalized = source.to_ascii_lowercase();
+    assert!(!normalized.contains("allow-non-loopback"));
+    assert!(!normalized.contains("allow_non_loopback"));
 }
 
 #[test]
