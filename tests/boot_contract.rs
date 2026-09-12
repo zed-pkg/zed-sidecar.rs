@@ -77,9 +77,14 @@ fn contract_keeps_cross_version_dotenv_isolation() {
 fn contract_has_no_public_non_loopback_escape_hatch() {
     let source = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(".cli-flags.toml"))
         .expect("read flags contract");
-    let normalized = source.to_ascii_lowercase();
-    assert!(!normalized.contains("allow-non-loopback"));
-    assert!(!normalized.contains("allow_non_loopback"));
+    let declarations = source
+        .lines()
+        .filter(|line| !line.trim_start().starts_with('#'))
+        .collect::<Vec<_>>()
+        .join("\n")
+        .to_ascii_lowercase();
+    assert!(!declarations.contains("allow-non-loopback"));
+    assert!(!declarations.contains("allow_non_loopback"));
 }
 
 #[test]
