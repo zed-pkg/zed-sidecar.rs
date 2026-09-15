@@ -2,7 +2,6 @@
 org = "zed-pkg"
 name = "zed-sidecar"
 version = "0.1.0"
-kind = "server"
 description = "k8s sidecar for zed-pkg."
 license = "MIT"
 keywords = ["sidecar", "observability", "k8s"]
