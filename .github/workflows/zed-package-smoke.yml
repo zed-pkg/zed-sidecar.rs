@@ -46,6 +46,47 @@ jobs:
           tar -xzf "$archive" -C "$RUNNER_TEMP/zed-bin"
           echo "$RUNNER_TEMP/zed-bin" >> "$GITHUB_PATH"
 
+      # r2g's isolated registry intentionally has no ambient network fallback.
+      # Seed the complete declared Zed dependency closure by exact immutable
+      # source revisions, then let r2g snapshot that registry before testing
+      # this PR's artifact.
+      - name: Check out exact flags-2-env fixture
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: flags-2-env/flags-2-env
+          ref: 70d3e6e6d94f4d500bfaa9b66ab646cc03be2bef
+          path: .r2g-fixtures/flags-2-env
+          persist-credentials: false
+
+      - name: Check out exact ores-otel sidecar fixture
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ores-otel/ores-otel-sidecar.rs
+          ref: c505838a405f8d87c9199387771c14795723621f
+          path: .r2g-fixtures/ores-otel-sidecar
+          persist-credentials: false
+
+      - name: Seed hermetic dependency registry
+        env:
+          ZED_PKG_REGISTRY: file://${{ runner.temp }}/zed-r2g-seed
+          ZED_PKG_INTERACTIVE: 'false'
+        run: |
+          set -euo pipefail
+          test "$(git -C .r2g-fixtures/flags-2-env rev-parse HEAD)" = "70d3e6e6d94f4d500bfaa9b66ab646cc03be2bef"
+          test "$(git -C .r2g-fixtures/ores-otel-sidecar rev-parse HEAD)" = "c505838a405f8d87c9199387771c14795723621f"
+          mkdir -p "$RUNNER_TEMP/zed-r2g-seed"
+          (
+            cd .r2g-fixtures/flags-2-env
+            zed validate
+            zed publish --skip-vcs-checks
+          )
+          (
+            cd .r2g-fixtures/ores-otel-sidecar
+            zed validate
+            zed publish --skip-vcs-checks
+          )
+          rm -rf .r2g-fixtures
+
       - name: Validate authored package contract
         run: zed validate
 
@@ -53,4 +94,6 @@ jobs:
         run: zed pack
 
       - name: Round-trip artifact and execute publish smoke test
+        env:
+          ZED_PKG_REGISTRY: file://${{ runner.temp }}/zed-r2g-seed
         run: zed r2g
