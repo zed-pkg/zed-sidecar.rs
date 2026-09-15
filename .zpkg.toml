@@ -21,6 +21,11 @@ outputs = ["target/release/zed-sidecar"]
 [bin]
 zed-sidecar = "target/release/zed-sidecar"
 
+[publish]
+include_readme = true
+tag_format = "v{version}"
+smoke_test = "sh \"$ZED_PKG_TEST_TARGET/scripts/tests/smoke-published-artifact.sh\""
+
 [install]
 adapter = "none"
 
