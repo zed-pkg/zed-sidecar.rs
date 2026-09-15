@@ -1,0 +1,98 @@
+name: Zed published artifact smoke
+
+on:
+  pull_request:
+    paths:
+      - '.zpkg.toml'
+      - '.github/workflows/zed-package-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.zpkg.toml'
+      - '.github/workflows/zed-package-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  r2g:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact reviewed head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify exact reviewed head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+
+      - name: Install checksum-pinned Zed v0.3.0
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/zed.tar.gz"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/zed-pkg/zed-cli/releases/download/v0.3.0/zed-x86_64-unknown-linux-musl.tar.gz \
+            -o "$archive"
+          echo "e380240c96242ab3b29e0e9d14c95ba946d086f20f0732e34d0e5cf47513efc7  $archive" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/zed-bin"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/zed-bin"
+          echo "$RUNNER_TEMP/zed-bin" >> "$GITHUB_PATH"
+
+      # r2g's isolated registry intentionally has no ambient network fallback.
+      # Seed the complete declared Zed dependency closure by exact immutable
+      # release/source revisions, then let r2g snapshot that registry before
+      # testing this PR's artifact. The flags fixture is the commit behind the
+      # v0.3.0 package tag so its authored manifest matches Zed v0.3.0's schema.
+      - name: Check out exact flags-2-env v0.3.0 fixture
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: flags-2-env/flags-2-env
+          ref: 2946224fb3a1bd84c0e39146b24f5f1ca8d69862
+          path: .r2g-fixtures/flags-2-env
+          persist-credentials: false
+
+      - name: Check out exact ores-otel sidecar fixture
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ores-otel/ores-otel-sidecar.rs
+          ref: c505838a405f8d87c9199387771c14795723621f
+          path: .r2g-fixtures/ores-otel-sidecar
+          persist-credentials: false
+
+      - name: Seed hermetic dependency registry
+        env:
+          ZED_PKG_REGISTRY: file://${{ runner.temp }}/zed-r2g-seed
+          ZED_PKG_INTERACTIVE: 'false'
+        run: |
+          set -euo pipefail
+          test "$(git -C .r2g-fixtures/flags-2-env rev-parse HEAD)" = "2946224fb3a1bd84c0e39146b24f5f1ca8d69862"
+          test "$(git -C .r2g-fixtures/ores-otel-sidecar rev-parse HEAD)" = "c505838a405f8d87c9199387771c14795723621f"
+          mkdir -p "$RUNNER_TEMP/zed-r2g-seed"
+          (
+            cd .r2g-fixtures/flags-2-env
+            zed validate
+            zed publish --skip-vcs-checks
+          )
+          (
+            cd .r2g-fixtures/ores-otel-sidecar
+            zed validate
+            zed publish --skip-vcs-checks
+          )
+          rm -rf .r2g-fixtures
+
+      - name: Validate authored package contract
+        run: zed validate
+
+      - name: Build deterministic package artifact
+        run: zed pack
+
+      - name: Round-trip artifact and execute publish smoke test
+        env:
+          ZED_PKG_REGISTRY: file://${{ runner.temp }}/zed-r2g-seed
+        run: zed r2g
