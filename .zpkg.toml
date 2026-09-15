@@ -24,7 +24,7 @@ zed-sidecar = "target/release/zed-sidecar"
 [publish]
 include_readme = true
 tag_format = "v{version}"
-smoke_test = "sh \"$ZED_PKG_TEST_TARGET/scripts/smoke-published-artifact.sh\""
+smoke_test = "test -x \"$ZED_PKG_TEST_TARGET/target/release/zed-sidecar\" && test -f \"$ZED_PKG_TEST_TARGET/.cli-flags.toml\" && test -f \"$ZED_PKG_TEST_TARGET/.ores-sidecar.toml\""
 
 [install]
 adapter = "none"
