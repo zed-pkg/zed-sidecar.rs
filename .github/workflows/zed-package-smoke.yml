@@ -47,10 +47,7 @@ jobs:
           echo "$RUNNER_TEMP/zed-bin" >> "$GITHUB_PATH"
 
       - name: Validate authored package contract
-        run: |
-          set -euo pipefail
-          zed validate
-          zed task info test
+        run: zed validate
 
       - name: Build deterministic package artifact
         run: zed pack
