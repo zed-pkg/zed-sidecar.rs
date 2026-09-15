@@ -16,7 +16,11 @@ url = "https://github.com/zed-pkg/zed-sidecar.rs"
 
 [build]
 command = "cargo build --release --locked --bin zed-sidecar"
-outputs = ["target/release/zed-sidecar"]
+outputs = [
+  "target/release/zed-sidecar",
+  ".cli-flags.toml",
+  ".ores-sidecar.toml",
+]
 
 [bin]
 zed-sidecar = "target/release/zed-sidecar"
