@@ -24,7 +24,7 @@ zed-sidecar = "target/release/zed-sidecar"
 [publish]
 include_readme = true
 tag_format = "v{version}"
-smoke_test = "sh \"$ZED_PKG_TEST_TARGET/scripts/tests/smoke-published-artifact.sh\""
+smoke_test = "sh \"$ZED_PKG_TEST_TARGET/scripts/smoke-published-artifact.sh\""
 
 [install]
 adapter = "none"

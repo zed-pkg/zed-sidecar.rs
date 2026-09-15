@@ -4,13 +4,13 @@ on:
   pull_request:
     paths:
       - '.zpkg.toml'
-      - 'scripts/tests/smoke-published-artifact.sh'
+      - 'scripts/smoke-published-artifact.sh'
       - '.github/workflows/zed-package-smoke.yml'
   push:
     branches: [main]
     paths:
       - '.zpkg.toml'
-      - 'scripts/tests/smoke-published-artifact.sh'
+      - 'scripts/smoke-published-artifact.sh'
       - '.github/workflows/zed-package-smoke.yml'
 
 permissions:
