@@ -48,13 +48,14 @@ jobs:
 
       # r2g's isolated registry intentionally has no ambient network fallback.
       # Seed the complete declared Zed dependency closure by exact immutable
-      # source revisions, then let r2g snapshot that registry before testing
-      # this PR's artifact.
-      - name: Check out exact flags-2-env fixture
+      # release/source revisions, then let r2g snapshot that registry before
+      # testing this PR's artifact. The flags fixture is the commit behind the
+      # v0.3.0 package tag so its authored manifest matches Zed v0.3.0's schema.
+      - name: Check out exact flags-2-env v0.3.0 fixture
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: flags-2-env/flags-2-env
-          ref: 70d3e6e6d94f4d500bfaa9b66ab646cc03be2bef
+          ref: 2946224fb3a1bd84c0e39146b24f5f1ca8d69862
           path: .r2g-fixtures/flags-2-env
           persist-credentials: false
 
@@ -72,7 +73,7 @@ jobs:
           ZED_PKG_INTERACTIVE: 'false'
         run: |
           set -euo pipefail
-          test "$(git -C .r2g-fixtures/flags-2-env rev-parse HEAD)" = "70d3e6e6d94f4d500bfaa9b66ab646cc03be2bef"
+          test "$(git -C .r2g-fixtures/flags-2-env rev-parse HEAD)" = "2946224fb3a1bd84c0e39146b24f5f1ca8d69862"
           test "$(git -C .r2g-fixtures/ores-otel-sidecar rev-parse HEAD)" = "c505838a405f8d87c9199387771c14795723621f"
           mkdir -p "$RUNNER_TEMP/zed-r2g-seed"
           (
