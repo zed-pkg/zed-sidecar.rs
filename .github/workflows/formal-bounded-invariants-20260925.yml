@@ -1,0 +1,54 @@
+name: Formal bounded artifact invariants
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-artifact-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Exhaustively check bounded publish/install state space
+        shell: bash
+        run: |
+          node <<'NODE'
+          const assert = require('node:assert/strict');
+          const actions = ['publish_a', 'publish_b', 'install', 'republish_other', 'bump_version'];
+          const initial = { version: 1, published: null, installed: null };
+          const step = (s, action) => {
+            switch (action) {
+              case 'publish_a': return s.published === null ? { ...s, published: 'A' } : s;
+              case 'publish_b': return s.published === null ? { ...s, published: 'B' } : s;
+              case 'install': return s.published === null ? s : { ...s, installed: s.published };
+              case 'republish_other': return s;
+              case 'bump_version': return { version: s.version + 1, published: null, installed: null };
+              default: throw new Error(`unknown action ${action}`);
+            }
+          };
+          const key = (s) => JSON.stringify(s);
+          let frontier = [initial];
+          const seen = new Set([key(initial)]);
+          for (let depth = 0; depth < 8; depth += 1) {
+            const next = [];
+            for (const state of frontier) {
+              if (state.installed !== null) assert.equal(state.installed, state.published, 'installed digest must match published digest');
+              for (const action of actions) {
+                const after = step(state, action);
+                assert.ok(after.version >= state.version, 'version never regresses');
+                if (after.installed !== null) assert.equal(after.installed, after.published, 'install remains bound to published digest');
+                if (state.published !== null && after.version === state.version) assert.equal(after.published, state.published, 'published digest is immutable within a version');
+                if (action === 'republish_other') assert.deepEqual(after, state, 'same-version digest substitution is rejected');
+                const k = key(after);
+                if (!seen.has(k)) { seen.add(k); next.push(after); }
+              }
+            }
+            frontier = next;
+          }
+          console.log(`formal artifact model OK: ${seen.size} reachable states checked`);
+          NODE
