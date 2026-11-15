@@ -69,7 +69,7 @@ jobs:
           PY
 
       - name: Enforce canonical TypeSpec and JSON Schema authorities with TJSV
-        uses: ORESoftware/typespec-json-schema-validator@7241f8e52dcc4518c72f0fdb5152d6cf66c86656
+        uses: ORESoftware/typespec-json-schema-validator@f386c78e44c93309029e186799d926c652cb0d96
         with:
           typespec: .contract-owner/contracts/sidecar/main.tsp
           schema: .contract-owner/contracts/sidecar/authored.schema.json
