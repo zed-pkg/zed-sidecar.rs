@@ -17,6 +17,14 @@
     runAsUser: 65532
     capabilities:
       drop: ["ALL"]
+  # Check the exact image-bundled flags and runtime policy before enabling
+  # liveness. This does not open a listener or require pod networking.
+  startupProbe:
+    exec:
+      command: ["/zed-sidecar", "preflight"]
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 12
   livenessProbe:
     exec:
       command: ["/zed-sidecar", "probe"]
